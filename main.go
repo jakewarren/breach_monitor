@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/apex/log"
 	"github.com/apex/log/handlers/cli"
 	"github.com/jakewarren/hackedemailsapi/api"
 	hibpapi "github.com/jakewarren/haveibeenpwned/api"
 	"github.com/jinzhu/now"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"os"
-	"strconv"
-	"time"
 )
 
 var (
@@ -39,7 +40,7 @@ func main() {
 	log.SetLevel(log.ErrorLevel)
 
 	if *silent {
-		//turn off errors
+		// turn off errors
 		log.SetLevel(log.FatalLevel)
 	}
 
@@ -57,20 +58,18 @@ func main() {
 		client = hibpapi.NewClient(*key)
 	}
 
-
 	printBreachResults(*email)
 
-	//sleep to respect the haveibeenpwned API rate limiting
+	// sleep to respect the haveibeenpwned API rate limiting
 	time.Sleep(2 * time.Second)
 
 	printPasteResults(*email)
 
 	printResults(*email)
-
 }
 
 func printBreachResults(email string) {
-	//query results for the email address
+	// query results for the email address
 	breaches, err := client.LookupEmailBreaches(email)
 	if err != nil {
 		log.WithError(err).Errorf("error looking up breach data for %s", email)
@@ -124,14 +123,14 @@ func printBreachResults(email string) {
 }
 
 func printResults(email string) {
-	//query results for the email address
+	// query results for the email address
 	response, err := api.LookupEmail(email)
 	if err != nil {
 		fmt.Printf("Decoding api response as JSON failed: %v", err)
 		return
 	}
 
-	//check if an invalid email was provided
+	// check if an invalid email was provided
 	if response.Status == "badsintax" {
 		log.Fatalf("query for %s was rejected. perhaps you did not provide a valid email address?", email)
 	}
@@ -179,8 +178,9 @@ func printResults(email string) {
 
 	fmt.Print(defResponse)
 }
+
 func printPasteResults(email string) {
-	//query results for the email address
+	// query results for the email address
 	pastes, err := client.LookupEmailPastes(email)
 	if err != nil {
 		log.WithError(err).Errorf("error looking up paste data for %s", email)
@@ -231,7 +231,7 @@ func printPasteResults(email string) {
 	fmt.Print(defResponse)
 }
 
-//CommifyNumber takes a number and returns a string with the number using comma separators
+// CommifyNumber takes a number and returns a string with the number using comma separators
 func CommifyNumber(n int64) string {
 	in := strconv.FormatInt(n, 10)
 	out := make([]byte, len(in)+(len(in)-2+int(in[0]/'0'))/3)
