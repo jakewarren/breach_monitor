@@ -13,16 +13,20 @@ import (
 	"time"
 )
 
-var version string
-
 var (
 	app = kingpin.New("breach_monitor", "queries hacked-emails.com and haveibeenpwned.com.")
 
 	debug      = app.Flag("debug", "print debug info").Short('d').Bool()
 	filterDate = app.Flag("filter-date", "only print breaches released after specified date").Short('f').String()
 	silent     = app.Flag("silent", "suppress response message, only display results").Short('s').Bool()
+	key        = app.Flag("key", "HIBP API key").Short('k').String()
+	envvar     = app.Flag("env", "environment variable to check for the HIBP API key").Default("HIBP_API_KEY").Short('e').String()
 
 	email = app.Arg("email", "the email address to lookup.").Required().String()
+
+	client *hibpapi.Client
+
+	version = "(ﾉ☉ヮ⚆)ﾉ ⌒*:･ﾟ✧"
 )
 
 func main() {
@@ -43,6 +47,17 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
+	if apikey, ok := os.LookupEnv(*envvar); ok {
+		client = hibpapi.NewClient(apikey)
+	} else {
+		if len(*key) == 0 {
+			log.Fatal("No API key provided")
+		}
+
+		client = hibpapi.NewClient(*key)
+	}
+
+
 	printBreachResults(*email)
 
 	//sleep to respect the haveibeenpwned API rate limiting
@@ -56,7 +71,7 @@ func main() {
 
 func printBreachResults(email string) {
 	//query results for the email address
-	breaches, err := hibpapi.LookupEmailBreaches(email)
+	breaches, err := client.LookupEmailBreaches(email)
 	if err != nil {
 		log.WithError(err).Errorf("error looking up breach data for %s", email)
 		return
@@ -166,7 +181,7 @@ func printResults(email string) {
 }
 func printPasteResults(email string) {
 	//query results for the email address
-	pastes, err := hibpapi.LookupEmailPastes(email)
+	pastes, err := client.LookupEmailPastes(email)
 	if err != nil {
 		log.WithError(err).Errorf("error looking up paste data for %s", email)
 		return
